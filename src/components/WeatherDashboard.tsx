@@ -15,12 +15,11 @@ export default function WeatherDashboard({ userId, token }: WeatherDashboardProp
   // State untuk menyimpan unit suhu pilihan user (Default Celsius)
   const [tempUnit, setTempUnit] = useState<'celsius' | 'fahrenheit'>('celsius');
 
-  
+  //Fetch Data Cuaca & Preferensi secara bersamaan
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        
         const [weatherRes, prefsRes] = await Promise.all([
           fetch('/api/weather/locations', {
             headers: { 'Authorization': `Bearer ${token}` },
@@ -44,7 +43,7 @@ export default function WeatherDashboard({ userId, token }: WeatherDashboardProp
           }
         }
 
-        // Handle Preferences Data (Cek unit suhu)
+        // Handle Preferences Data
         if (prefsJson.success && prefsJson.data && prefsJson.data.length > 0) {
           const userPref = prefsJson.data[0];
           if (userPref.temperature_unit) {
@@ -63,7 +62,7 @@ export default function WeatherDashboard({ userId, token }: WeatherDashboardProp
     fetchData();
   }, [userId, token]);
 
-  
+  //Helper: Fungsi Konversi Suhu
   const formatTemp = (celsius: number) => {
     if (tempUnit === 'fahrenheit') {
       const fahrenheit = (celsius * 9 / 5) + 32;
@@ -71,7 +70,6 @@ export default function WeatherDashboard({ userId, token }: WeatherDashboardProp
     }
     return `${Math.round(celsius)}°C`;
   };
-  
 
   // Helper untuk warna score drying index
   const getScoreColor = (score: number) => {
@@ -135,12 +133,18 @@ export default function WeatherDashboard({ userId, token }: WeatherDashboardProp
                 <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{location.name}</h3>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">{location.city}</p>
               </div>
-              <div className="text-right">
-                <span className={`text-3xl font-black ${getScoreColor(score)}`}>
-                  {score}
-                </span>
-                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Index</p>
+              
+   
+              <div className="text-right flex flex-col items-end">
+                <div className="flex items-baseline">
+                    <span className={`text-4xl font-black ${getScoreColor(score)}`}>
+                    {score}
+                    </span>
+                    <span className="text-sm font-medium text-zinc-400 ml-1">/100</span>
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mt-1">Drying Index</p>
               </div>
+              {/* --------------------------------------------------- */}
             </div>
 
             <div className="mb-4">
@@ -154,7 +158,6 @@ export default function WeatherDashboard({ userId, token }: WeatherDashboardProp
               <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-zinc-200/50 dark:border-zinc-700/50">
                 <div>
                   <p className="text-xs text-zinc-500">Temperature</p>
-                  {/* Gunakan fungsi helper formatTemp di sini */}
                   <p className="font-semibold">{formatTemp(weather.temperature || 0)}</p>
                 </div>
                 <div>
