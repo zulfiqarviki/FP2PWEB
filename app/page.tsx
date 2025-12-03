@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import AuthForm from '@/components/AuthForm';
 import LocationsManager from '@/components/LocationsManager';
 import PreferencesManager from '@/components/PreferencesManager';
@@ -11,7 +12,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('locations');
   const [alerts, setAlerts] = useState<any[]>([]);
 
-  // Check for token on mount
+  
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUserId = localStorage.getItem('userId');
@@ -21,7 +22,32 @@ export default function Home() {
     }
   }, []);
 
-  // Fetch alerts when userId changes
+  
+  useEffect(() => {
+    const applyTheme = () => {
+      const savedTheme = localStorage.getItem('app-theme') || 'light';
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    
+    applyTheme();
+
+    
+    const handleThemeChange = () => {
+      applyTheme();
+    };
+
+    window.addEventListener('theme-changed', handleThemeChange);
+    return () => {
+      window.removeEventListener('theme-changed', handleThemeChange);
+    };
+  }, []);
+
+  
   useEffect(() => {
     if (userId && token) {
       fetch(`/api/alerts?user_id=${userId}&is_read=false`, {
@@ -40,6 +66,9 @@ export default function Home() {
   const handleLogin = (newToken: string, newUserId: string) => {
     setToken(newToken);
     setUserId(newUserId);
+    
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('userId', newUserId);
   };
 
   const handleLogout = () => {
