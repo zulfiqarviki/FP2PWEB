@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 // CREATE - Register new user
 export async function POST(request: NextRequest) {
@@ -16,6 +16,20 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Use anon key for auth
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Supabase configuration' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Create auth user
     console.log('🔐 Creating auth user...');
@@ -41,9 +55,14 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Auth user created:', authData.user.id);
 
-    // Create user profile
+    // Create user profile using service role key (bypasses RLS)
     console.log('💾 Creating user profile...');
-    const { data, error } = await supabase
+    
+    const adminClient = supabaseServiceKey
+      ? createClient(supabaseUrl, supabaseServiceKey)
+      : supabase;
+
+    const { data, error } = await adminClient
       .from('users')
       .insert([
         {
@@ -79,7 +98,19 @@ export async function GET(request: NextRequest) {
   try {
     console.log('📥 GET /api/users');
     
-    const { data, error } = await supabase
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Supabase service configuration' },
+        { status: 500 }
+      );
+    }
+
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data, error } = await adminClient
       .from('users')
       .select('*')
       .order('created_at', { ascending: false });

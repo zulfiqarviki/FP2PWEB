@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-//@ts-ignore
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 // CREATE - Create user preferences
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Supabase configuration' },
+        { status: 500 }
+      );
+    }
+
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from('user_preferences')
       .insert([body])
       .select()
@@ -30,7 +41,19 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('user_id');
 
-    let query = supabase.from('user_preferences').select('*');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Supabase configuration' },
+        { status: 500 }
+      );
+    }
+
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    let query = adminClient.from('user_preferences').select('*');
 
     if (userId) {
       query = query.eq('user_id', userId);
