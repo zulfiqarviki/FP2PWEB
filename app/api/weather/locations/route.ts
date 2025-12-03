@@ -3,14 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 import { getWeatherByCity, calculateDryingIndex } from '@/lib/weather';
 import { getTokenFromHeader, verifyToken } from '@/lib/jwt';
 
-/**
- * GET /api/weather/locations
- * Get weather and drying index for all user's saved locations
- * Requires: Authorization header with JWT token
- */
+
 export async function GET(request: NextRequest) {
   try {
-    // Verify JWT token
+    
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) {
       return NextResponse.json(
@@ -20,7 +16,25 @@ export async function GET(request: NextRequest) {
     }
 
     const token = getTokenFromHeader(authHeader);
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid token format' },
+        { status: 401 }
+      );
+    }
+
+   
     const decoded = verifyToken(token);
+    
+    
+    if (!decoded) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+    
+
     const userId = decoded.id;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -35,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch user's locations
+   
     const { data: locations, error: locationsError } = await adminClient
       .from('locations')
       .select('id, user_id, name, city, latitude, longitude')
@@ -54,7 +68,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch weather for each location
+   
     const weatherResults = await Promise.all(
       locations.map(async (location: any) => {
         try {
@@ -74,13 +88,14 @@ export async function GET(request: NextRequest) {
             timestamp: new Date().toISOString(),
           };
         } catch (error: any) {
+          
           return {
             location: {
               id: location.id,
               name: location.name,
               city: location.city,
             },
-            error: error.message,
+            error: error.message || 'Failed to fetch weather',
             timestamp: new Date().toISOString(),
           };
         }
@@ -98,7 +113,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Weather Locations API Error:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to fetch weather for locations' },
-      { status: error.message?.includes('invalid token') ? 401 : 500 }
+      { status: 500 }
     );
   }
 }

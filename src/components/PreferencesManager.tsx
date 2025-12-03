@@ -9,12 +9,11 @@ export default function PreferencesManager({ userId, token }: { userId: string; 
     user_id: userId,
     enable_notifications: false,
     temperature_unit: 'celsius',
-    theme: 'light', // Default awal
+    theme: 'light',
     language: 'en',
   });
   const [saving, setSaving] = useState(false);
 
-  
   const applyThemeVisuals = (themeMode: string) => {
     if (themeMode === 'dark') {
       document.documentElement.classList.add('dark');
@@ -23,7 +22,6 @@ export default function PreferencesManager({ userId, token }: { userId: string; 
     }
   };
 
-  
   useEffect(() => {
     const fetchPrefs = async () => {
       try {
@@ -35,38 +33,32 @@ export default function PreferencesManager({ userId, token }: { userId: string; 
         const json = await res.json();
         
         if (json.success && json.data && json.data.length > 0) {
-          
           const prefs = json.data[0];
           setSettings(prefs);
           setPrefId(prefs.id);
           applyThemeVisuals(prefs.theme || 'light');
         } else {
-          
           const savedTheme = localStorage.getItem('app-theme');
-          
           if (savedTheme) {
             setSettings(prev => ({ ...prev, theme: savedTheme as any }));
             applyThemeVisuals(savedTheme);
           } else {
-            
             setSettings(prev => ({ ...prev, theme: 'light' }));
             applyThemeVisuals('light');
             localStorage.setItem('app-theme', 'light');
           }
         }
       } catch (err) {
-        console.error("Error fetching preferences:", err);
+        console.error(err);
       }
     };
     fetchPrefs();
   }, [userId, token]);
 
-  
   const handleThemeChange = (newTheme: 'light' | 'dark') => {
     setSettings({ ...settings, theme: newTheme });
   };
 
-  
   const handleSave = async () => {
     setSaving(true);
     const method = prefId ? 'PUT' : 'POST';
@@ -88,20 +80,18 @@ export default function PreferencesManager({ userId, token }: { userId: string; 
           setPrefId(data.data.id);
         }
         
-        
         if (settings.theme) {
-          localStorage.setItem('app-theme', settings.theme); 
-          applyThemeVisuals(settings.theme); 
+          localStorage.setItem('app-theme', settings.theme);
+          applyThemeVisuals(settings.theme);
           window.dispatchEvent(new Event('theme-changed'));
         }
-    
 
-        alert('Preferences saved and Theme updated!');
+        alert('Preferences saved!');
       } else {
         alert('Failed to save preferences: ' + data.error);
       }
     } catch (err) {
-      console.error("Error saving preferences:", err);
+      console.error(err);
       alert('Error saving preferences');
     }
     setSaving(false);
@@ -111,19 +101,6 @@ export default function PreferencesManager({ userId, token }: { userId: string; 
     <div className="max-w-2xl space-y-6">
       <h3 className="text-xl font-bold">User Preferences</h3>
       <div className="p-6 space-y-4 border rounded bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
-        
-        {/* Toggle Notifikasi */}
-        <div className="flex items-center justify-between">
-          <label className="font-medium">Enable Notifications</label>
-          <input 
-            type="checkbox" 
-            checked={settings.enable_notifications}
-            onChange={e => setSettings({...settings, enable_notifications: e.target.checked})}
-            className="w-5 h-5"
-          />
-        </div>
-
-        {/* Temperature Unit */}
         <div>
           <label className="block mb-1 text-sm font-medium">Temperature Unit</label>
           <select 
@@ -136,7 +113,6 @@ export default function PreferencesManager({ userId, token }: { userId: string; 
           </select>
         </div>
 
-        {/* App Theme */}
         <div>
           <label className="block mb-1 text-sm font-medium">App Theme</label>
           <select 
